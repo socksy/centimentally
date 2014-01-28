@@ -9,7 +9,6 @@
   [category feature]
   (swap! model update-in [category feature]
          (fnil inc 0)))
-(train! :positive "test")
 
 (defn category-total
   ^Number [category]
@@ -18,12 +17,10 @@
 (defn feature-probability
   "Given a category and feature, probability the feature is in that category."
   [category feature]
-  (let [feature-count (or (get (category @model) feature) 0)
+  (let [feature-count (or (get (category @model) feature) 
+                          0) ;not in hash-map means 0 probability
         total (category-total category)]
     (/ feature-count total)))
-
-(feature-probability :positive "test")
-
 
 (defn get-features
   "Extract features from the text (atm just tokenizing)"
@@ -34,11 +31,18 @@
   [category text]
   (reduce +
           (map #(let [prob (feature-probability category %)] 
-                  (if (or (nil? prob) (= 0 prob)) 
+                  (if (= 0 prob) 
                     0 
                     (- (java.lang.Math/log prob))))
                (get-features text))))
 
-(def fets (get-features "testing fuck"))
-(text-probability :negative "testing the fuck out of this")
+(defn classify [text] 
+  (let [probs (into {}
+        (map vector 
+             (keys @model)
+             (map #(text-probability % text)
+                  (keys @model))))]
+  (apply max-key #(% probs) (keys @model))))
+
+
 (-> @model)
