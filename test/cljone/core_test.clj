@@ -74,7 +74,9 @@
   (testing "Classifications"
     (is (= :nil
            (classify "a string that is not in either dictionary" rmodel)))
-    )
-  )
+    (is (= :positive
+           (classify "a happy test string" rmodel)))
+    (is (= :negative
+           (classify "a terrible bad string" rmodel)))))
 
 (run-tests)

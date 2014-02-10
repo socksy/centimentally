@@ -2,12 +2,21 @@
   (:require [clojure.string :as string])
   (:import [java.lang Math])) 
 
+(defn get-features
+  "Extract features from the text (atm just tokenizing)"
+  [text]
+   (string/split text #"\W+"))
 
-(defn train!
+(defn train
   "Trains the model with the feature associating with the category symbol"
   [category feature model]
-  (swap! model update-in [category feature]
+  (send model update-in [category feature]
          (fnil inc 0)))
+
+(defn train-text
+  "Trains the model with a category and text using train"
+  [category text model]
+  (map train (repeat category) (get-features text) (repeat model)))
 
 (defn category-total
   ^Number [category model]
@@ -21,11 +30,9 @@
         total (category-total category model)]
     (/ feature-count total)))
 
-(defn get-features
-  "Extract features from the text (atm just tokenizing)"
-  [text]
-   (string/split text #"\s+"))
 
+;because of the way this naive bayes works, this isn't strictly a probability of
+;as in the case of a percent or out of 1
 (defn text-probability
   [category text model]
   (reduce +
