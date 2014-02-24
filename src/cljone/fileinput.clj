@@ -2,7 +2,8 @@
   (:require [clojure.string :as string]
             [clojure.java.io :as jio]
             [cljone.core :refer [train-text]])
-  (:import []))
+  (:import [])
+  (:gen-class :main true))
 
 ;want to be able to support bigger files than memory can support, so using
 ;buffered reader rather than slurp.
@@ -10,15 +11,22 @@
   (with-open [rdr (jio/reader filename)]
     (func (line-seq rdr))))
 
-(line-count "resources/trainingdata.txt")
-(with-open [rdr (jio/reader "resources/trainingdata.txt")] (count (line-seq rdr)))
+;(line-count "resources/trainingdata.txt")
+;(with-open [rdr (jio/reader "resources/trainingdata.txt")] (count (line-seq rdr)))
 
 (defn line-count [filename]
   (read-and-do filename count))
 
 (defn split-up [line]
+  "Splits up line according to current file structure of cat, message (both in quotes)"
   (let [[_ classification tweet] (re-matches #"\"(.+)\",\"(.+)\"" line)]
     [(keyword classification) tweet]))
+
+(defn train-over-words [model no-of-lines lines-read] 
+   (doall (map (fn [values] (let [[cat text] values]
+                              (if-not (or (nil? cat) (nil? text))
+                                (train-text cat text model)))) 
+               (map #(split-up %) (take no-of-lines lines-read))))) 
 
 (defn train-with-file 
   "Given filename, model and optional number of lines, trains the model"
@@ -28,8 +36,11 @@
    (read-and-do filename
      (partial train-over-words model no-of-lines))))
 
-(defn train-over-words [model no-of-lines lines-read] 
-   (doall (map (fn [values] (let [[cat text] values]
-                              (if-not (or (nil? cat) (nil? text))
-                                (train-text cat text model)))) 
-               (map #(split-up %) (take no-of-lines lines-read))))) 
+(defn -main
+  [& args]
+  (let [model (agent {})] 
+    (train-with-file (first args) model)
+    (await model)
+    (println @model)
+    (shutdown-agents)))
+

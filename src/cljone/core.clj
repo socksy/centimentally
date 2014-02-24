@@ -1,11 +1,11 @@
 (ns cljone.core
   (:require [clojure.string :as string])
-  (:import [java.lang Math])) 
+  (:import [java.lang Math]))
 
 (defn get-features
   "Extract features from the text (atm just tokenizing)"
   [text]
-   (string/split text #"\W+"))
+   (string/split text #"\s"))
 
 (defn train
   "Trains the model with the feature associating with the category symbol"
@@ -16,7 +16,7 @@
 (defn train-text
   "Trains the model with a category and text using train"
   [category text model]
-  (map train (repeat category) (get-features text) (repeat model)))
+  (doall (map train (repeat category) (get-features text) (repeat model))))
 
 (defn category-total
   ^Number [category model]
@@ -29,7 +29,6 @@
                           0) ;not in hash-map means 0 probability
         total (category-total category model)]
     (/ feature-count total)))
-
 
 ;because of the way this naive bayes works, this isn't strictly a probability of
 ;as in the case of a percent or out of 1

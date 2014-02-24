@@ -1,0 +1,2 @@
+classification,tweet
+"positive","Gas by my house hit $3.39!!!! I'm going to Chapel Hill on Sat. :)"
