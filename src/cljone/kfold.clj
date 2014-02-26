@@ -7,17 +7,13 @@
 (defn -main [] (println "Nothing to see here"))
 
 
-(fold-file "resources/trainingdata.txt" 6)
-(remove-folds "resources/trainingdata.txt" 6)
 
 (defn remove-folds [filename number]
   (map #(do (sh/sh "rm" (str filename "-train" %))
             (sh/sh "rm" (str filename "-test" %)))
        (range number)))
 
-(defn fold-file 
-  [file folds]
-  (map write-folds (repeat file) (partition-text file folds)))
+
 
 (defn annotate-with-indices
   [coll]
@@ -31,6 +27,8 @@
     (doall (partition-all folds (line-seq rdr)))))
 
 (defn write-folds
+  "Writes to appropriate -testN for each partition, and each not N for -trainN
+  So each train should match up with test, and you can do k-fold cross evaluation."
   [filename partitioned]
   (doseq [[ind value] (annotate-with-indices partitioned)]
     (spit (str filename "-test" ind) 
@@ -39,3 +37,11 @@
                 (str value "\n") :append true) 
          (filter #(not= % ind) 
                  (range (count partitioned)))))))
+
+(defn fold-file 
+  [file folds]
+  (map write-folds (repeat file) (partition-text file folds)))
+
+(fold-file "resources/trainingdata.txt" 6)
+(remove-folds "resources/trainingdata.txt" 6)
+(fold-file "resources/anexample")
