@@ -1,13 +1,14 @@
 (ns cljone.fileinput
   (:require [clojure.string :as string]
             [clojure.java.io :as jio]
-            [cljone.core :refer [train-text]])
+            [cljone.core :refer [train-text]]
+            [cljone.core :refer [classify]])
   (:import [])
   (:gen-class :main true))
 
 ;want to be able to support bigger files than memory can support, so using
 ;buffered reader rather than slurp.
-(defn read-and-do [filename func ] 
+(defn read-and-do [filename func] 
   (with-open [rdr (jio/reader filename)]
     (func (line-seq rdr))))
 
@@ -35,6 +36,18 @@
   ([filename no-of-lines model] 
    (read-and-do filename
      (partial train-over-words model no-of-lines))))
+
+(defn test-against-file
+  [filename model]
+  (with-open [rdr (jio/reader filename)]
+    (let [predictions 
+          (->> (line-seq rdr)
+               (map split-up)
+               (map #(= (first %)
+                        (classify (last %) model))))]
+      (let [correct (count (filter true? predictions))
+            total (count predictions)]
+        (/ correct total)))))
 
 (defn -main
   [& args]
