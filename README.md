@@ -8,4 +8,3 @@ Use to classify texts
 
 Copyright © 2014 FIXME
 
-Haven't got a clue atm

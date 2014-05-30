@@ -24,10 +24,12 @@
     [(keyword classification) tweet]))
 
 (defn train-over-words [model no-of-lines lines-read] 
-   (doall (map (fn [values] (let [[cat text] values]
-                              (if-not (or (nil? cat) (nil? text))
-                                (train-text cat text model)))) 
-               (map #(split-up %) (take no-of-lines lines-read))))) 
+  (doall (map (fn [values] (let [[cat text] values]
+                             (if-not (or (nil? cat) (nil? text))
+                               ;doall is needed here to force sends to happen
+                               ;need to force sends to happen so that await works
+                               (doall (train-text cat text model))))) 
+              (map #(split-up %) (take no-of-lines lines-read))))) 
 
 (defn train-with-file 
   "Given filename, model and optional number of lines, trains the model"
@@ -55,5 +57,6 @@
     (train-with-file (first args) model)
     (await model)
     (println @model)
+    (println (test-against-file "resources/trainingdata.txt" model))
     (shutdown-agents)))
 

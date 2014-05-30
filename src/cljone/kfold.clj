@@ -6,14 +6,10 @@
 
 (defn -main [] (println "Nothing to see here"))
 
-
-
 (defn remove-folds [filename number]
   (map #(do (sh/sh "rm" (str filename "-train" %))
             (sh/sh "rm" (str filename "-test" %)))
        (range number)))
-
-
 
 (defn annotate-with-indices
   [coll]
@@ -31,6 +27,7 @@
   So each train should match up with test, and you can do k-fold cross evaluation."
   [filename partitioned]
   (doseq [[ind value] (annotate-with-indices partitioned)]
+  ;dirt simple writing out to files --- prob not webscale, prob not important
     (spit (str filename "-test" ind) 
           (str value "\n") :append true)
     (doall (map #(spit (str filename "-train" %) 
@@ -42,6 +39,34 @@
   [file folds]
   (map write-folds (repeat file) (partition-text file folds)))
 
-(fold-file "resources/trainingdata.txt" 6)
-(remove-folds "resources/trainingdata.txt" 6)
-(fold-file "resources/anexample")
+(defn eval-folds
+  [file folds]
+  ;(fold-file file folds)
+  (let [[testing training] 
+        (map 
+          #(map (fn [num] (str file "-" % num)) 
+                (range folds)) 
+          ["test" "train"])]
+    (double ;going for mean of different trainings
+      (/ (reduce + 
+                 (pmap #(let [model (agent {})]
+                          (fi/train-with-file %1 model)
+                          (await model)
+                          (fi/test-against-file %2 model)) 
+                       testing training))
+         folds))))
+
+(defn kfold-eval
+  [file folds]
+  (do 
+    (fold-file file folds)
+    (let [kfeval (eval-folds file folds)]
+      ;kfeval
+      (remove-folds file folds)
+      kfeval
+      )
+    )
+  )
+
+(kfold-eval "resources/trainingdata.txt" 10)
+

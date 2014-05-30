@@ -5,7 +5,7 @@
 (defn get-features
   "Extract features from the text (atm just tokenizing)"
   [text]
-   (string/split text #"\s"))
+    (string/split (.toLowerCase text) #"\W"))
 
 (defn train
   "Trains the model with the feature associating with the category symbol"
@@ -16,7 +16,9 @@
 (defn train-text
   "Trains the model with a category and text using train"
   [category text model]
-  (doall (map train (repeat category) (get-features text) (repeat model))))
+  ;just removed a doall from around this, figure it's no use
+  ;as there's a do-all in the train-over-words function
+  (map train (repeat category) (get-features text) (repeat model)))
 
 (defn category-total
   ^Number [category model]
